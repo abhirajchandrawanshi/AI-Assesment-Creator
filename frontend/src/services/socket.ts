@@ -1,5 +1,15 @@
+/**
+ * WebSocket Configuration and Management
+ * 
+ * Handles real-time communication with the backend for:
+ * - Real-time progress updates during question generation
+ * - Live notifications
+ * - Collaborative features (future)
+ */
+
 import { io, Socket } from 'socket.io-client';
-import { API_BASE_URL, QuestionPaper } from './api';
+import { WS_URL } from '../lib/apiConfig';
+import { QuestionPaper } from './api';
 import { useAssignmentStore } from '../store/assignmentStore';
 
 let socket: Socket | null = null;
@@ -9,9 +19,13 @@ export function connectSocket(assignmentId: string): Socket {
     socket.disconnect();
   }
 
-  socket = io(API_BASE_URL, {
+  socket = io(WS_URL, {
     transports: ['websocket'],
     forceNew: true,
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    reconnectionAttempts: 5,
   });
 
   socket.on('connect', () => {

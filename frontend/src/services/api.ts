@@ -1,4 +1,11 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+/**
+ * VedaAI API Client
+ * 
+ * Provides type-safe API functions for all backend endpoints.
+ * All requests use environment-configured API URL from lib/apiConfig.ts
+ */
+
+import { API_URL, buildApiUrl, FETCH_CONFIG } from '../lib/apiConfig';
 
 export interface QuestionConfig {
   questionType: string;
@@ -44,11 +51,11 @@ export interface QuestionPaper {
 }
 
 export async function fetchAssignments(search?: string): Promise<Assignment[]> {
-  const url = new URL(`${API_BASE_URL}/api/assignments`);
+  const url = new URL(buildApiUrl('/api/assignments'));
   if (search) {
     url.searchParams.append('search', search);
   }
-  const res = await fetch(url.toString(), { cache: 'no-store' });
+  const res = await fetch(url.toString(), { ...FETCH_CONFIG });
   if (!res.ok) {
     throw new Error('Failed to fetch assignments');
   }
@@ -56,7 +63,7 @@ export async function fetchAssignments(search?: string): Promise<Assignment[]> {
 }
 
 export async function fetchAssignment(id: string): Promise<Assignment> {
-  const res = await fetch(`${API_BASE_URL}/api/assignments/${id}`, { cache: 'no-store' });
+  const res = await fetch(buildApiUrl(`/api/assignments/${id}`), { ...FETCH_CONFIG });
   if (!res.ok) {
     throw new Error('Failed to fetch assignment details');
   }
@@ -64,7 +71,7 @@ export async function fetchAssignment(id: string): Promise<Assignment> {
 }
 
 export async function fetchQuestionPaper(assignmentId: string): Promise<QuestionPaper> {
-  const res = await fetch(`${API_BASE_URL}/api/assignments/${assignmentId}/paper`, { cache: 'no-store' });
+  const res = await fetch(buildApiUrl(`/api/assignments/${assignmentId}/paper`), { ...FETCH_CONFIG });
   if (!res.ok) {
     throw new Error('Failed to fetch question paper details');
   }
@@ -72,8 +79,9 @@ export async function fetchQuestionPaper(assignmentId: string): Promise<Question
 }
 
 export async function deleteAssignment(id: string): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/api/assignments/${id}`, {
+  const res = await fetch(buildApiUrl(`/api/assignments/${id}`), {
     method: 'DELETE',
+    ...FETCH_CONFIG,
   });
   if (!res.ok) {
     throw new Error('Failed to delete assignment');
@@ -81,7 +89,7 @@ export async function deleteAssignment(id: string): Promise<void> {
 }
 
 export async function createAssignment(formData: FormData): Promise<Assignment> {
-  const res = await fetch(`${API_BASE_URL}/api/assignments`, {
+  const res = await fetch(buildApiUrl('/api/assignments'), {
     method: 'POST',
     body: formData,
   });
@@ -94,7 +102,7 @@ export async function createAssignment(formData: FormData): Promise<Assignment> 
 
 // Profile functions
 export async function updateUserProfile(name: string): Promise<{ success: boolean; name: string }> {
-  const res = await fetch(`${API_BASE_URL}/api/user/profile`, {
+  const res = await fetch(buildApiUrl('/api/user/profile'), {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name }),
@@ -108,7 +116,7 @@ export async function updateUserProfile(name: string): Promise<{ success: boolea
 export async function uploadProfilePicture(file: File): Promise<{ success: boolean; imageUrl: string }> {
   const formData = new FormData();
   formData.append('image', file);
-  const res = await fetch(`${API_BASE_URL}/api/user/profile-picture`, {
+  const res = await fetch(buildApiUrl('/api/user/profile-picture'), {
     method: 'POST',
     body: formData,
   });
@@ -120,7 +128,7 @@ export async function uploadProfilePicture(file: File): Promise<{ success: boole
 
 // Notification functions
 export async function getNotifications(): Promise<Array<{ id: string; message: string; isRead: boolean; assignmentId?: string; createdAt: string }>> {
-  const res = await fetch(`${API_BASE_URL}/api/notifications`, { cache: 'no-store' });
+  const res = await fetch(buildApiUrl('/api/notifications'), { ...FETCH_CONFIG });
   if (!res.ok) {
     return [];
   }
@@ -128,12 +136,14 @@ export async function getNotifications(): Promise<Array<{ id: string; message: s
 }
 
 export async function markAsRead(notificationId: string): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/api/notifications/${notificationId}/read`, {
+  const res = await fetch(buildApiUrl(`/api/notifications/${notificationId}/read`), {
     method: 'PUT',
+    ...FETCH_CONFIG,
   });
   if (!res.ok) {
     throw new Error('Failed to mark notification as read');
   }
 }
 
-export { API_BASE_URL };
+// Export API_URL for backward compatibility and external use
+export { API_URL };
