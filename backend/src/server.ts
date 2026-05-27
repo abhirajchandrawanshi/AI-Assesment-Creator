@@ -2,6 +2,7 @@ import express from 'express';
 import http from 'http';
 import cors from 'cors';
 import dotenv from 'dotenv';
+
 import { connectDB } from './config/db';
 import { getRedisConnection } from './config/redis';
 import { initSocketServer } from './sockets/socketServer';
@@ -14,15 +15,27 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-// App configuration
+// ===============================
+// CORS CONFIGURATION
+// ===============================
 app.use(cors({
-  origin: '*', // Allow all origins for dev simplicity
+  origin: [
+    'https://ai-assesment-creator-97uq.vercel.app',
+    'http://localhost:3000',
+  ],
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 }));
+
+// ===============================
+// MIDDLEWARE
+// ===============================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health Check API
+// ===============================
+// HEALTH CHECK
+// ===============================
 app.get('/health', (req, res) => {
   res.json({
     status: 'healthy',
@@ -31,34 +44,43 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Bind routers
+// ===============================
+// ROUTES
+// ===============================
 app.use('/api/assignments', assignmentRoutes);
 
+// ===============================
+// SERVER SETUP
+// ===============================
 const PORT = process.env.PORT || 5000;
 
 async function bootstrap() {
-  console.log('🚀 Booting up Assessment Creator Backend...');
-  
-  // Connect database
-  await connectDB();
+  try {
+    console.log('🚀 Booting up Assessment Creator Backend...');
 
-  // Connect Redis
-  getRedisConnection();
+    // Database
+    await connectDB();
 
-  // Initialize Socket.IO
-  initSocketServer(server);
+    // Redis
+    getRedisConnection();
 
-  // Initialize background queues
-  initWorkers();
+    // Socket.IO
+    initSocketServer(server);
 
-  // Start Server
-  server.listen(PORT, () => {
-    console.log(`📡 Server listening on port ${PORT}`);
-  });
+    // Workers
+    initWorkers();
+
+    // Start server
+    server.listen(PORT, () => {
+      console.log(`📡 Server listening on port ${PORT}`);
+    });
+
+  } catch (err) {
+    console.error('❌ Server startup failed:', err);
+    process.exit(1);
+  }
 }
 
-bootstrap().catch((err) => {
-  console.error('❌ Server startup failed:', err);
-  process.exit(1);
-});
+bootstrap();
+
 export default server;
